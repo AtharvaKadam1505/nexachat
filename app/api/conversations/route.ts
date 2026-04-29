@@ -34,15 +34,16 @@ export async function GET() {
     orderBy: [{ isPinned: "desc" }, { updatedAt: "desc" }],
   });
 
-  const enriched = conversations.map((conv) => {
-    const myMembership = conv.members.find((m) => m.userId === user.id);
-    return {
-      ...conv,
-      lastMessage: conv.messages[0] ?? null,
-      unreadCount: myMembership?.unreadCount ?? 0,
-      messages: undefined,
-    };
-  });
+  const enriched = conversations.map((conv: typeof conversations[number]) => {
+  const myMembership = conv.members.find((m) => m.userId === user.id);
+  return {
+    ...conv,
+    lastMessage: conv.messages[0] ?? null,
+    unreadCount: myMembership?.unreadCount ?? 0,
+    messages: undefined,
+  };
+});
+
 
   return NextResponse.json(enriched);
 }
