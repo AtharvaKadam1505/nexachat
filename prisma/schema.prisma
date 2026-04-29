@@ -1,0 +1,132 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  clerkId     String   @unique
+  username    String   @unique
+  displayName String
+  email       String   @unique
+  avatarUrl   String?
+  lastSeenAt  DateTime @default(now())
+  isOnline    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships     ConversationMember[]
+  sentMessages    Message[]
+  messageStatuses MessageStatus[]
+
+  @@index([clerkId])
+  @@index([username])
+}
+
+model Conversation {
+  id          String           @id @default(cuid())
+  type        ConversationType @default(DIRECT)
+  name        String?
+  avatarUrl   String?
+  isPinned    Boolean          @default(false)
+  isArchived  Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  members  ConversationMember[]
+  messages Message[]
+
+  @@index([updatedAt(sort: Desc)])
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+model ConversationMember {
+  id             String     @id @default(cuid())
+  role           MemberRole @default(MEMBER)
+  isMuted        Boolean    @default(false)
+  lastReadAt     DateTime   @default(now())
+  joinedAt       DateTime   @default(now())
+  unreadCount    Int        @default(0)
+
+  userId         String
+  conversationId String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conversationId])
+  @@index([conversationId])
+  @@index([userId])
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Message {
+  id              String      @id @default(cuid())
+  clientMessageId String      @unique
+  content         String?
+  type            MessageType @default(TEXT)
+  mediaUrl        String?
+  mediaMetadata   Json?
+  isEdited        Boolean     @default(false)
+  isDeleted       Boolean     @default(false)
+  deletedForAll   Boolean     @default(false)
+  editedAt        DateTime?
+  createdAt       DateTime    @default(now())
+
+  conversationId String
+  senderId       String
+  replyToId      String?
+
+  conversation Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User          @relation(fields: [senderId], references: [id])
+  replyTo      Message?      @relation("Reply", fields: [replyToId], references: [id])
+  replies      Message[]     @relation("Reply")
+  statuses     MessageStatus[]
+
+  @@index([conversationId, createdAt(sort: Desc)])
+  @@index([clientMessageId])
+  @@index([senderId])
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  FILE
+  AUDIO
+  SYSTEM
+}
+
+model MessageStatus {
+  id        String         @id @default(cuid())
+  status    DeliveryStatus @default(SENT)
+  updatedAt DateTime       @updatedAt
+
+  messageId String
+  userId    String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+}
+
+enum DeliveryStatus {
+  SENT
+  DELIVERED
+  READ
+}
