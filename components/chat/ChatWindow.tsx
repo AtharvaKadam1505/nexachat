@@ -24,15 +24,14 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
   const { typingUsers } = useSocketStore();
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-
-  const { data: conversation, isLoading } = useQuery<Conversation>({
-    queryKey: ["conversation", conversationId],
-    queryFn: async () => {
-      const convs = await fetch("/api/conversations").then((r) => r.json()) as Conversation[];
-      return convs.find((c) => c.id === conversationId) ?? null;
-    },
-  });
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { data: conversation, isLoading } = useQuery<Conversation | null>({
+  queryKey: ["conversation", conversationId],
+  queryFn: async () => {
+    const convs = await fetch("/api/conversations").then((r) => r.json()) as Conversation[];
+    return convs.find((c) => c.id === conversationId) ?? null;
+  },
+});
 
   const { data: currentUser } = useQuery({
     queryKey: ["me"],

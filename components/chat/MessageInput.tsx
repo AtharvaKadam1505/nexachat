@@ -30,8 +30,8 @@ export function MessageInput({
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
-  const typingTimerRef = useRef<ReturnType<typeof setTimeout>>();
-  const isTypingRef = useRef(false);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingRef = useRef<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { theme } = useTheme();
 
@@ -41,7 +41,7 @@ export function MessageInput({
       isTypingRef.current = true;
       onTypingStart();
     }
-    clearTimeout(typingTimerRef.current);
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     typingTimerRef.current = setTimeout(() => {
       isTypingRef.current = false;
       onTypingStop();
@@ -58,7 +58,7 @@ export function MessageInput({
   const handleSend = async () => {
     const trimmed = content.trim();
     if (!trimmed && !selectedFile) return;
-    clearTimeout(typingTimerRef.current);
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     isTypingRef.current = false;
     onTypingStop();
     const file = selectedFile;
