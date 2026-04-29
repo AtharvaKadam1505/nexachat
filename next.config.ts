@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: { allowedOrigins: ["localhost:3000"] },
   },
+  webpack: (config) => {
+    config.externals = config.externals || [];
+    return config;
+  },
 };
 
 export default nextConfig;
