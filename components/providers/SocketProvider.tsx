@@ -24,13 +24,27 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     const initSocket = async () => {
-      const token = await getToken();
+      // Always get a fresh token
+      const token = await getToken({ skipCache: true });
       if (!token || !mounted) return;
 
       const socket = getSocket(token);
       socketRef.current = socket;
 
+      // On reconnect, refresh the token
+      socket.on(SocketEvents.CONNECT_ERROR, async (err) => {
+        if (err.message === "Unauthorized" || err.message === "No token") {
+          console.log("Token expired, refreshing...");
+          const newToken = await getToken({ skipCache: true });
+          if (newToken && mounted) {
+            socket.auth = { token: newToken };
+            socket.connect();
+          }
+        }
+      });
+
       socket.on(SocketEvents.CONNECT, () => {
+        console.log("✅ Socket connected");
         setConnected(true);
       });
 
@@ -42,7 +56,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         setTyping(payload);
         if (payload.isTyping) {
           setTimeout(() => {
-            useSocketStore.getState().clearTyping(payload.conversationId, payload.userId);
+            useSocketStore.getState().clearTyping(
+              payload.conversationId,
+              payload.userId
+            );
           }, 5000);
         }
       });
@@ -56,11 +73,26 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     initSocket();
 
+    // Refresh token every 50 seconds to prevent expiry
+    const refreshInterval = setInterval(async () => {
+      if (!mounted || !socketRef.current) return;
+      const newToken = await getToken({ skipCache: true });
+      if (newToken && socketRef.current) {
+        socketRef.current.auth = { token: newToken };
+        // Reconnect with fresh token if disconnected
+        if (!socketRef.current.connected) {
+          socketRef.current.connect();
+        }
+      }
+    }, 50 * 1000);
+
     return () => {
       mounted = false;
+      clearInterval(refreshInterval);
       if (socketRef.current) {
         socketRef.current.off(SocketEvents.CONNECT);
         socketRef.current.off(SocketEvents.DISCONNECT);
+        socketRef.current.off(SocketEvents.CONNECT_ERROR);
         socketRef.current.off(SocketEvents.TYPING_UPDATE);
         socketRef.current.off(SocketEvents.PRESENCE_UPDATE);
       }
