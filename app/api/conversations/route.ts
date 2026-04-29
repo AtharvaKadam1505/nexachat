@@ -35,7 +35,9 @@ export async function GET() {
   });
 
   const enriched = conversations.map((conv: typeof conversations[number]) => {
-  const myMembership = conv.members.find((m) => m.userId === user.id);
+  const myMembership = conv.members.find(
+    (m: typeof conv.members[number]) => m.userId === user.id
+  );
   return {
     ...conv,
     lastMessage: conv.messages[0] ?? null,
