@@ -34,22 +34,28 @@ export default async function ChatLayout({
 
   return (
     <SocketProvider>
-      <div className="flex h-screen w-screen overflow-hidden bg-background">
-
-        {/* Sidebar — full screen on mobile home, fixed width on desktop */}
-        <aside className="flex-shrink-0 h-full
-          w-full md:w-80 lg:w-96
-          border-r"
+      {/* 
+        Layout strategy:
+        - Mobile: Sidebar and chat are both full screen, chat uses fixed overlay
+        - Desktop: Sidebar + chat side by side
+      */}
+      <div className="relative flex h-screen w-screen overflow-hidden bg-background">
+        <aside
+          className="w-full md:w-80 lg:w-96 flex-shrink-0 h-full border-r"
           style={{ borderColor: "hsl(var(--border))" }}
         >
           <Sidebar />
         </aside>
 
-        {/* Main chat area — hidden on mobile (Sidebar covers it), visible on desktop */}
+        {/* Desktop only main — mobile uses fixed overlay in page */}
         <main className="hidden md:flex flex-1 flex-col h-full overflow-hidden">
           {children}
         </main>
 
+        {/* Mobile portal target — children with fixed positioning escape this */}
+        <div className="md:hidden">
+          {children}
+        </div>
       </div>
     </SocketProvider>
   );

@@ -332,7 +332,10 @@ export function Sidebar() {
               className="relative group px-2"
             >
               <button
-                onClick={() => router.push(`/chat/${conv.id}`)}
+                onClick={() => {
+                  console.log("Navigating to:", `/chat/${conv.id}`);
+                  router.push(`/chat/${conv.id}`);
+                }}
                 className={cn(
                   "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all text-left",
                   isActive
