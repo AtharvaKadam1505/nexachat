@@ -96,7 +96,10 @@ export function Sidebar() {
 
   return (
     <div
-      className="flex flex-col h-full w-full"
+      className={cn(
+        "flex-col h-full w-full",
+        pathname.includes("/chat/") ? "hidden md:flex" : "flex"
+      )}
       style={{ background: "hsl(var(--sidebar-bg))" }}
     >
       {/* Header */}
