@@ -20,7 +20,6 @@ export default async function ChatLayout({
       clerkUser.username ||
       "User";
     const username = clerkUser.username || `user_${clerkUser.id.slice(-8)}`;
-
     try {
       const user = await db.user.upsert({
         where: { clerkId },
@@ -36,19 +35,21 @@ export default async function ChatLayout({
   return (
     <SocketProvider>
       <div className="flex h-screen w-screen overflow-hidden bg-background">
-        {/* Sidebar — hidden on mobile when in a chat */}
-        <aside
-          className="w-full md:w-80 lg:w-96 flex-shrink-0 border-r flex flex-col h-full md:flex"
+
+        {/* Sidebar — full screen on mobile home, fixed width on desktop */}
+        <aside className="flex-shrink-0 h-full
+          w-full md:w-80 lg:w-96
+          border-r"
           style={{ borderColor: "hsl(var(--border))" }}
-          id="sidebar"
         >
           <Sidebar />
         </aside>
 
-        {/* Main content */}
-        <main className="flex-1 flex flex-col h-full overflow-hidden">
+        {/* Main chat area — hidden on mobile (Sidebar covers it), visible on desktop */}
+        <main className="hidden md:flex flex-1 flex-col h-full overflow-hidden">
           {children}
         </main>
+
       </div>
     </SocketProvider>
   );

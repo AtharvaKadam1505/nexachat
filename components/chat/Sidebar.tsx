@@ -29,7 +29,6 @@ export function Sidebar() {
   const [showSettings, setShowSettings] = useState(false);
 
   // On mobile: hide sidebar when a chat is open
-  const isInChat = pathname.includes("/chat/");
   const activeConvId = pathname.split("/chat/")[1];
 
   const { data: conversations = [], isLoading } = useQuery<Conversation[]>({
@@ -97,11 +96,7 @@ export function Sidebar() {
 
   return (
     <div
-      className={cn(
-        "flex-col h-full w-full",
-        // Mobile: hide when inside a chat, show on home
-        isInChat ? "hidden md:flex" : "flex"
-      )}
+      className="flex flex-col h-full w-full"
       style={{ background: "hsl(var(--sidebar-bg))" }}
     >
       {/* Header */}

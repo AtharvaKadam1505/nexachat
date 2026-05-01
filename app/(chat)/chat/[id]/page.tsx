@@ -13,8 +13,16 @@ export default async function ChatPage({ params }: ChatPageProps) {
   const { id } = await params;
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <ChatWindow conversationId={id} />
-    </div>
+    <>
+      {/* Desktop — renders inside layout main */}
+      <div className="hidden md:flex flex-col h-full w-full">
+        <ChatWindow conversationId={id} />
+      </div>
+
+      {/* Mobile — full screen fixed overlay on top of everything */}
+      <div className="md:hidden fixed inset-0 z-50 flex flex-col bg-background">
+        <ChatWindow conversationId={id} />
+      </div>
+    </>
   );
 }
