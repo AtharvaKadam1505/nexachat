@@ -12,7 +12,6 @@ export default async function ChatLayout({
   const { userId: clerkId } = await auth();
   if (!clerkId) redirect("/sign-in");
 
-  // Auto-sync user to DB on every visit
   const clerkUser = await currentUser();
   if (clerkUser) {
     const email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
@@ -22,30 +21,32 @@ export default async function ChatLayout({
       "User";
     const username = clerkUser.username || `user_${clerkUser.id.slice(-8)}`;
 
-    try {                                          // ← add try/catch here
+    try {
       const user = await db.user.upsert({
         where: { clerkId },
         create: { clerkId, username, displayName, email, avatarUrl: clerkUser.imageUrl },
         update: { username, displayName, email, avatarUrl: clerkUser.imageUrl },
       });
-      console.log("✅ User synced:", user.id, user.displayName);   // ← log success
+      console.log("✅ User synced:", user.id, user.displayName);
     } catch (error) {
-      console.error("❌ User sync failed:", error);                // ← log failure
+      console.error("❌ User sync failed:", error);
     }
-  } else {
-    console.log("⚠️ No clerkUser found for clerkId:", clerkId);   // ← log missing user
   }
 
   return (
     <SocketProvider>
       <div className="flex h-screen w-screen overflow-hidden bg-background">
+        {/* Sidebar — hidden on mobile when in a chat */}
         <aside
-          className="w-full md:w-80 lg:w-96 flex-shrink-0 border-r flex flex-col h-full"
+          className="w-full md:w-80 lg:w-96 flex-shrink-0 border-r flex flex-col h-full md:flex"
           style={{ borderColor: "hsl(var(--border))" }}
+          id="sidebar"
         >
           <Sidebar />
         </aside>
-        <main className="flex-1 flex-col h-full overflow-hidden hidden md:flex">
+
+        {/* Main content */}
+        <main className="flex-1 flex flex-col h-full overflow-hidden">
           {children}
         </main>
       </div>

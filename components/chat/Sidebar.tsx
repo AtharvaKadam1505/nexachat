@@ -7,12 +7,11 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Plus, Settings, LogOut, MessageSquare,
-  Users, Archive, Bell, BellOff, Pin, Trash2,
-  MoreVertical, X, Check
+  Users, Archive, BellOff, Pin, X,
 } from "lucide-react";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { cn, truncate, formatConversationTime, getInitials } from "@/lib/utils";
+import { cn, truncate, formatConversationTime } from "@/lib/utils";
 import type { Conversation, User } from "@/types";
 import { useSocketStore } from "@/stores/socketStore";
 
@@ -29,6 +28,10 @@ export function Sidebar() {
   const [userSearch, setUserSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
 
+  // On mobile: hide sidebar when a chat is open
+  const isInChat = pathname.includes("/chat/");
+  const activeConvId = pathname.split("/chat/")[1];
+
   const { data: conversations = [], isLoading } = useQuery<Conversation[]>({
     queryKey: ["conversations"],
     queryFn: () => fetch("/api/conversations").then((r) => r.json()),
@@ -37,7 +40,10 @@ export function Sidebar() {
 
   const { data: searchResults = [] } = useQuery<User[]>({
     queryKey: ["users", "search", userSearch],
-    queryFn: () => fetch(`/api/users/search?q=${encodeURIComponent(userSearch)}`).then((r) => r.json()),
+    queryFn: () =>
+      fetch(`/api/users/search?q=${encodeURIComponent(userSearch)}`).then((r) =>
+        r.json()
+      ),
     enabled: userSearch.length >= 2,
   });
 
@@ -63,7 +69,8 @@ export function Sidebar() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["conversations"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["conversations"] }),
   });
 
   const filtered = conversations.filter((c) => {
@@ -88,17 +95,27 @@ export function Sidebar() {
     return onlineUsers[other.user.id] ?? other.user.isOnline;
   }
 
-  const activeConvId = pathname.split("/chat/")[1];
-
   return (
-    <div className="flex flex-col h-full" style={{ background: "hsl(var(--sidebar-bg))" }}>
+    <div
+      className={cn(
+        "flex-col h-full w-full",
+        // Mobile: hide when inside a chat, show on home
+        isInChat ? "hidden md:flex" : "flex"
+      )}
+      style={{ background: "hsl(var(--sidebar-bg))" }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "hsl(var(--sidebar-border))" }}>
+      <div
+        className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
+        style={{ borderColor: "hsl(var(--sidebar-border))" }}
+      >
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
             <MessageSquare className="w-4 h-4 text-primary-foreground" />
           </div>
-          <span className="font-bold text-base text-foreground tracking-tight">NexaChat</span>
+          <span className="font-bold text-base text-foreground tracking-tight">
+            NexaChat
+          </span>
         </div>
         <div className="flex items-center gap-1">
           <ThemeToggle />
@@ -111,7 +128,12 @@ export function Sidebar() {
           </button>
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            className={cn(
+              "p-2 rounded-lg transition-all",
+              showSettings
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -125,14 +147,19 @@ export function Sidebar() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-b"
+            className="overflow-hidden border-b flex-shrink-0"
             style={{ borderColor: "hsl(var(--sidebar-border))" }}
           >
             <div className="p-4 space-y-3">
               <div className="flex items-center gap-3">
                 {clerkUser && (
                   <UserAvatar
-                    user={{ displayName: clerkUser.fullName ?? clerkUser.username ?? "Me", avatarUrl: clerkUser.imageUrl, isOnline: true }}
+                    user={{
+                      displayName:
+                        clerkUser.fullName ?? clerkUser.username ?? "Me",
+                      avatarUrl: clerkUser.imageUrl,
+                      isOnline: true,
+                    }}
                     size="md"
                   />
                 )}
@@ -159,7 +186,7 @@ export function Sidebar() {
       </AnimatePresence>
 
       {/* Search */}
-      <div className="px-3 py-2">
+      <div className="px-3 py-2 flex-shrink-0">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
@@ -179,18 +206,33 @@ export function Sidebar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-50 flex items-start justify-center pt-16 px-4"
-            style={{ background: "hsl(var(--background)/80)", backdropFilter: "blur(4px)" }}
+            style={{
+              background: "hsl(var(--background)/80)",
+              backdropFilter: "blur(4px)",
+            }}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: -10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: -10 }}
               className="w-full max-w-sm rounded-2xl border shadow-xl overflow-hidden"
-              style={{ background: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}
+              style={{
+                background: "hsl(var(--card))",
+                borderColor: "hsl(var(--border))",
+              }}
             >
-              <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "hsl(var(--border))" }}>
+              <div
+                className="flex items-center justify-between px-4 py-3 border-b"
+                style={{ borderColor: "hsl(var(--border))" }}
+              >
                 <h3 className="font-semibold text-sm">New Conversation</h3>
-                <button onClick={() => { setShowNewChat(false); setUserSearch(""); }} className="p-1 rounded-md hover:bg-muted transition-colors">
+                <button
+                  onClick={() => {
+                    setShowNewChat(false);
+                    setUserSearch("");
+                  }}
+                  className="p-1 rounded-md hover:bg-muted transition-colors"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -207,22 +249,30 @@ export function Sidebar() {
                 </div>
                 <div className="space-y-1 max-h-72 overflow-y-auto">
                   {userSearch.length < 2 && (
-                    <p className="text-xs text-muted-foreground text-center py-4">Type at least 2 characters to search</p>
+                    <p className="text-xs text-muted-foreground text-center py-4">
+                      Type at least 2 characters to search
+                    </p>
                   )}
                   {userSearch.length >= 2 && searchResults.length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-4">No users found</p>
+                    <p className="text-xs text-muted-foreground text-center py-4">
+                      No users found
+                    </p>
                   )}
                   {searchResults.map((u) => (
                     <button
                       key={u.id}
                       onClick={() => createConvMutation.mutate(u.id)}
                       disabled={createConvMutation.isPending}
-                      className="flex items-center gap-3 w-full px-3 py-2 rounded-xl hover:bg-muted transition-colors text-left"
+                      className="flex items-center gap-3 w-full px-3 py-2 rounded-xl hover:bg-muted transition-colors text-left disabled:opacity-50"
                     >
                       <UserAvatar user={u} size="sm" showPresence />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{u.displayName}</p>
-                        <p className="text-xs text-muted-foreground truncate">@{u.username}</p>
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {u.displayName}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          @{u.username}
+                        </p>
                       </div>
                     </button>
                   ))}
@@ -234,12 +284,16 @@ export function Sidebar() {
       </AnimatePresence>
 
       {/* Conversations List */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin py-1">
+      <div className="flex-1 overflow-y-auto scrollbar-thin py-1 min-h-0">
+        {/* Loading skeletons */}
         {isLoading && (
-          <div className="space-y-2 px-2 pt-2">
+          <div className="space-y-1 px-2 pt-1">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-xl animate-pulse">
-                <div className="w-10 h-10 rounded-full bg-muted" />
+              <div
+                key={i}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl animate-pulse"
+              >
+                <div className="w-10 h-10 rounded-full bg-muted flex-shrink-0" />
                 <div className="flex-1 space-y-1.5">
                   <div className="h-3.5 bg-muted rounded-full w-3/4" />
                   <div className="h-3 bg-muted rounded-full w-1/2" />
@@ -249,6 +303,7 @@ export function Sidebar() {
           </div>
         )}
 
+        {/* Empty state */}
         {!isLoading && filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center h-40 text-center px-4">
             <MessageSquare className="w-8 h-8 text-muted-foreground/40 mb-2" />
@@ -266,6 +321,7 @@ export function Sidebar() {
           </div>
         )}
 
+        {/* Conversation items */}
         {filtered.map((conv) => {
           const name = getConversationName(conv, clerkUser?.id ?? "");
           const avatarUser = getConversationAvatar(conv, clerkUser?.id ?? "");
@@ -278,18 +334,18 @@ export function Sidebar() {
               key={conv.id}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              className="relative group"
+              className="relative group px-2"
             >
               <button
                 onClick={() => router.push(`/chat/${conv.id}`)}
                 className={cn(
-                  "flex items-center gap-3 w-full px-3 py-2.5 mx-1 rounded-xl transition-all text-left",
+                  "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all text-left",
                   isActive
-                    ? "bg-[hsl(var(--sidebar-active))] text-[hsl(var(--sidebar-active-text))]"
-                    : "hover:bg-[hsl(var(--sidebar-hover))]"
+                    ? "bg-[hsl(var(--sidebar-active))]"
+                    : "hover:bg-[hsl(var(--sidebar-hover))] active:bg-[hsl(var(--sidebar-hover))]"
                 )}
-                style={{ width: "calc(100% - 8px)" }}
               >
+                {/* Avatar */}
                 {avatarUser ? (
                   <UserAvatar
                     user={{ ...avatarUser, isOnline: online }}
@@ -302,25 +358,52 @@ export function Sidebar() {
                   </div>
                 )}
 
+                {/* Text content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
-                    <span className={cn("text-sm font-medium truncate", isActive ? "text-[hsl(var(--sidebar-active-text))]" : "text-foreground")}>
-                      {conv.isPinned && <Pin className="w-3 h-3 inline-block mr-1 opacity-60" />}
+                    <span
+                      className={cn(
+                        "text-sm font-medium truncate",
+                        isActive
+                          ? "text-[hsl(var(--sidebar-active-text))]"
+                          : "text-foreground"
+                      )}
+                    >
+                      {conv.isPinned && (
+                        <Pin className="w-3 h-3 inline-block mr-1 opacity-60" />
+                      )}
                       {name}
                     </span>
-                    <span className={cn("text-[11px] flex-shrink-0", isActive ? "text-[hsl(var(--sidebar-active-text))]/70" : "text-muted-foreground")}>
+                    <span
+                      className={cn(
+                        "text-[11px] flex-shrink-0",
+                        isActive
+                          ? "text-[hsl(var(--sidebar-active-text))]/70"
+                          : "text-muted-foreground"
+                      )}
+                    >
                       {lastMsg ? formatConversationTime(lastMsg.createdAt) : ""}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-1">
-                    <p className={cn("text-xs truncate", isActive ? "text-[hsl(var(--sidebar-active-text))]/80" : "text-muted-foreground")}>
+                    <p
+                      className={cn(
+                        "text-xs truncate",
+                        isActive
+                          ? "text-[hsl(var(--sidebar-active-text))]/80"
+                          : "text-muted-foreground"
+                      )}
+                    >
                       {lastMsg?.isDeleted
                         ? "This message was deleted"
                         : lastMsg?.content
                         ? truncate(lastMsg.content, 36)
-                        : lastMsg?.type === "IMAGE" ? "📷 Photo"
-                        : lastMsg?.type === "FILE" ? "📎 File"
-                        : lastMsg?.type === "AUDIO" ? "🎵 Audio"
+                        : lastMsg?.type === "IMAGE"
+                        ? "📷 Photo"
+                        : lastMsg?.type === "FILE"
+                        ? "📎 File"
+                        : lastMsg?.type === "AUDIO"
+                        ? "🎵 Audio"
                         : ""}
                     </p>
                     {(conv.unreadCount ?? 0) > 0 && !isActive && (
@@ -332,28 +415,53 @@ export function Sidebar() {
                 </div>
               </button>
 
-              {/* Context menu actions */}
-              <div className={cn(
-                "absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5 rounded-lg p-0.5",
-                "bg-background/90 backdrop-blur-sm border shadow-sm",
-                isActive && "hidden"
-              )} style={{ borderColor: "hsl(var(--border))" }}>
+              {/* Hover action buttons — desktop only */}
+              <div
+                className={cn(
+                  "absolute right-3 top-1/2 -translate-y-1/2",
+                  "hidden group-hover:md:flex items-center gap-0.5 rounded-lg p-0.5",
+                  "bg-background/90 backdrop-blur-sm border shadow-sm",
+                  isActive && "!hidden"
+                )}
+                style={{ borderColor: "hsl(var(--border))" }}
+              >
                 <button
-                  onClick={(e) => { e.stopPropagation(); updateConvMutation.mutate({ id: conv.id, data: { isPinned: !conv.isPinned } }); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateConvMutation.mutate({
+                      id: conv.id,
+                      data: { isPinned: !conv.isPinned },
+                    });
+                  }}
                   className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                   title={conv.isPinned ? "Unpin" : "Pin"}
                 >
                   <Pin className="w-3 h-3" />
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); updateConvMutation.mutate({ id: conv.id, data: { isMuted: !conv.members.find(m => m.user.clerkId === clerkUser?.id)?.isMuted } }); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const myMembership = conv.members.find(
+                      (m) => m.user.clerkId === clerkUser?.id
+                    );
+                    updateConvMutation.mutate({
+                      id: conv.id,
+                      data: { isMuted: !myMembership?.isMuted },
+                    });
+                  }}
                   className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                   title="Mute"
                 >
                   <BellOff className="w-3 h-3" />
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); updateConvMutation.mutate({ id: conv.id, data: { isArchived: true } }); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateConvMutation.mutate({
+                      id: conv.id,
+                      data: { isArchived: true },
+                    });
+                  }}
                   className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                   title="Archive"
                 >
